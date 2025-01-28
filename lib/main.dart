@@ -35,6 +35,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   late MQTTService _mqttService;
   String _payload = 'Waiting for data...'; // ตัวแปรเก็บ payl
+  Color _shadowColor = Colors.blue.withOpacity(0.5);
   late VlcPlayerController
       _videoPlayerController; // ใช้ late เพื่อกำหนดค่าในภายหลัง
 
@@ -46,6 +47,33 @@ class _MyHomePageState extends State<MyHomePage> {
     _mqttService.connectMQTT();
 
     initializePlayer();
+
+    // _startTimer(); // เริ่มนับเวลา 5 วินาที
+  }
+  //  @override
+  // void initState() {
+  //   super.initState();
+  //   _startTimer(); // เริ่มนับเวลา 5 วินาที
+  // }
+
+  // void _startTimer() {
+  //   Future.delayed(Duration(seconds: 5), () {
+  //     setState(() {
+  //       _payload = 'Waiting for data...';
+  //       _shadowColor  = Colors.blue.withOpacity(0.5); // เปลี่ยนสีหลังจาก 5 วินาที
+  //     });
+  //   });
+  // }
+    void _startTimer() {
+    // เริ่มทำงานเมื่อ 5 วินาทีผ่านไป
+    Future.delayed(const Duration(seconds: 5), () {
+      // if (_payload == 'Waiting for data...') {
+        setState(() {
+          _payload = 'Waiting for data...'; // เปลี่ยนข้อความเมื่อหมดเวลา
+          _shadowColor = Colors.blue.withOpacity(0.5); // เปลี่ยนสีของเงาหลังจาก 5 วินาที
+        });
+      // }
+    });
   }
 
   Future<void> initializePlayer() async {
@@ -62,10 +90,21 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  // Callback สำหรับอัปเดต payload
-  void _updatePayload(String payload) {
+  // // Callback สำหรับอัปเดต payload
+  // void _updatePayload(String payload) {
+  //   setState(() {
+  //     _payload = payload; // อัปเดต payload และ rebuild UI
+  //   });
+  // }
+    void _updatePayload(String payload) {
     setState(() {
+       _startTimer(); 
       _payload = payload; // อัปเดต payload และ rebuild UI
+      _shadowColor = _payload == '1'
+          ? Colors.green.withOpacity(0.5) // สีเขียวหาก _payload == 1
+          : _payload == '0'
+              ? Colors.red.withOpacity(0.5) // สีแดงหาก _payload == 0
+              : Colors.blue.withOpacity(0.5); // สีฟ้าหาก payload อื่นๆ
     });
   }
 
@@ -111,7 +150,9 @@ class _MyHomePageState extends State<MyHomePage> {
             // _payload,
             //   style: Theme.of(context).textTheme.headlineMedium,
             // ),
-            Container( height: 10,),
+            Container(
+              height: 10,
+            ),
 
             Container(
               padding:
@@ -120,7 +161,14 @@ class _MyHomePageState extends State<MyHomePage> {
               decoration: BoxDecoration(
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.blue.withOpacity(0.5), // สีของเงา
+                    color: _shadowColor,
+                    // color: _payload == '1'
+                    //     ? Colors.green
+                    //         .withOpacity(0.5) // สีเขียวหาก _payload == 1
+                    //     : _payload == '0'
+                    //         ? Colors.red.withOpacity(0.5)
+                    //         : Colors.blue
+                    //             .withOpacity(0.5), // สีแดงหาก _payload != 1
                     spreadRadius: 2, // การกระจายของเงา
                     blurRadius: 2, // ความเบลอของเงา
                     // offset: Offset(0, 3), // ตำแหน่งของเงา (แกน X, แกน Y)
