@@ -36,7 +36,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> initializePlayer() async {
     try {
       _videoPlayerController = VlcPlayerController.network(
-        'https://media.w3.org/2010/05/sintel/trailer.mp4',
+        'http://192.168.10.126:8002/stream',
         hwAcc: HwAcc.full,
         autoPlay: true,
         options: VlcPlayerOptions(),
