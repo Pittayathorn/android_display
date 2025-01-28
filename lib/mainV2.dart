@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
+import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 import 'mqtt_service.dart'; // นำเข้าไฟล์ mqtt_service.dart
 
 void main() {
@@ -35,8 +35,8 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   late MQTTService _mqttService;
   String _payload = 'Waiting for data...'; // ตัวแปรเก็บ payl
-  late VideoPlayerController _videoPlayerController;
-  bool _isVideoInitialized = false;  // Add this flag
+  late VlcPlayerController _videoPlayerController; // ใช้ late เพื่อกำหนดค่าในภายหลัง
+  
 
   @override
   void initState() {
@@ -45,32 +45,19 @@ class _MyHomePageState extends State<MyHomePage> {
     _mqttService.onMessageReceived = _updatePayload; // กำหนด callback
     _mqttService.connectMQTT();
 
-   initializeVideoPlayer();
+   initializePlayer();
   }
-  Future<void> initializeVideoPlayer() async {
+  Future<void> initializePlayer() async {
     try {
-     final _videoPlayerController = VideoPlayerController.network(
+      _videoPlayerController = VlcPlayerController.network(
         'http://192.168.10.126:8002/stream',
-        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+        hwAcc: HwAcc.full,
+        autoPlay: true,
+        options: VlcPlayerOptions(),
       );
-
       await _videoPlayerController.initialize();
-
-      if (mounted) {
-        setState(() {
-          _isVideoInitialized = true;
-        });
-        _videoPlayerController.play();
-        _videoPlayerController.setLooping(true);  // Optional: if you want the video to loop
-      }
     } catch (e) {
-      print('Error initializing video player: $e');
-      // Handle error appropriately
-      if (mounted) {
-        setState(() {
-          _isVideoInitialized = false;
-        });
-      }
+      print("Error initializing video player: $e");
     }
   }
     // Callback สำหรับอัปเดต payload
@@ -80,11 +67,13 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  @override
-  void dispose() {
-    _videoPlayerController.dispose(); // ปล่อยทรัพยากรเมื่อ widget ถูกทำลาย
+   @override
+  void dispose() async {
     super.dispose();
+    await _videoPlayerController.stopRendererScanning();
+    await _videoPlayerController.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -105,15 +94,13 @@ class _MyHomePageState extends State<MyHomePage> {
             //   width: 200,
             //   height: 200,
             // ),
-             _isVideoInitialized
-                ? AspectRatio(
-                    aspectRatio: _videoPlayerController.value.aspectRatio,
-                    child: VideoPlayer(_videoPlayerController),
-                  )
-                : const Center(
-                    child: CircularProgressIndicator(),
-                  ),
-            const SizedBox(height: 20),
+             _videoPlayerController != null
+            ? VlcPlayer(
+                controller: _videoPlayerController,
+                aspectRatio: 16 / 9,
+                placeholder: Center(child: CircularProgressIndicator()),
+              )
+            : CircularProgressIndicator(),
             const Text(
               'You have pushed the button this many times:',
             ),
