@@ -1,0 +1,58 @@
+import 'package:flutter/material.dart';
+import 'package:mqtt_client/mqtt_client.dart';
+import 'package:mqtt_client/mqtt_server_client.dart';
+
+final client = MqttServerClient('rd.ns.co.th', '1882');
+// แทนที่ด้วย broker และ port ที่คุณต้องการใช้
+
+Future<void> connectMQTT() async {
+  client.logging(on: true);
+  client.onConnected = onConnected;
+  client.onDisconnected = onDisconnected;
+  client.onSubscribed = onSubscribed;
+
+  final connMessage = MqttConnectMessage()
+      .withClientIdentifier('flutter_client')
+      .keepAliveFor(60)
+      .withWillTopic('willtopic')
+      .withWillMessage('Will message')
+      .startClean();
+
+  client.connectionMessage = connMessage;
+
+  try {
+    await client.connect();
+  } catch (e) {
+    print('Exception: $e');
+    client.disconnect();
+  }
+
+  if (client.connectionStatus!.state == MqttConnectionState.connected) {
+    print('MQTT client connected');
+    // Subscribe to topic
+    const topic = 'test/topic'; // แทนที่ด้วย topic ที่ต้องการ
+    client.subscribe(topic, MqttQos.atMostOnce);
+  }
+
+  // รับข้อมูลเมื่อมีการ publish
+  client.updates!.listen((List<MqttReceivedMessage<MqttMessage>> c) {
+    final MqttPublishMessage message = c[0].payload as MqttPublishMessage;
+    final payload = MqttPublishPayload.bytesToStringAsString(message.payload.message);
+    
+    print('Received message: $payload from topic: ${c[0].topic}>');
+    // ทำอะไรกับข้อมูลที่ได้รับตามต้องการ
+  });
+}
+
+// Callbacks
+void onConnected() {
+  print('Connected');
+}
+
+void onDisconnected() {
+  print('Disconnected');
+}
+
+void onSubscribed(String topic) {
+  print('Subscribed to topic: $topic');
+}
