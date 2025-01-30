@@ -28,3 +28,15 @@ void main() {
     expect(find.text('1'), findsOneWidget);
   });
 }
+    // _videoPlayerController != null
+    //             ? SizedBox(
+    //                 width: 600,
+    //                 height: 300,
+    //                 child: VlcPlayer(
+    //                   controller: _videoPlayerController,
+    //                   aspectRatio: _videoPlayerController
+    //                       .value.aspectRatio, //4/3, //16 / 9,
+    //                   placeholder: Center(child: CircularProgressIndicator()),
+    //                 ),
+    //               )
+    //             : CircularProgressIndicator(),

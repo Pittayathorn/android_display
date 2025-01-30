@@ -38,6 +38,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Color _shadowColor = Colors.blue.withOpacity(0.5);
   late VlcPlayerController
       _videoPlayerController; // ใช้ late เพื่อกำหนดค่าในภายหลัง
+  late VlcPlayerController _videoPlayerController2; // กล้องตัวที่สอง
 
   @override
   void initState() {
@@ -47,6 +48,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _mqttService.connectMQTT();
 
     initializePlayer();
+    initializePlayer2();
 
     // _startTimer(); // เริ่มนับเวลา 5 วินาที
   }
@@ -64,14 +66,15 @@ class _MyHomePageState extends State<MyHomePage> {
   //     });
   //   });
   // }
-    void _startTimer() {
+  void _startTimer() {
     // เริ่มทำงานเมื่อ 5 วินาทีผ่านไป
     Future.delayed(const Duration(seconds: 5), () {
       // if (_payload == 'Waiting for data...') {
-        setState(() {
-          _payload = 'Waiting for data...'; // เปลี่ยนข้อความเมื่อหมดเวลา
-          _shadowColor = Colors.blue.withOpacity(0.5); // เปลี่ยนสีของเงาหลังจาก 5 วินาที
-        });
+      setState(() {
+        _payload = 'Waiting for data...'; // เปลี่ยนข้อความเมื่อหมดเวลา
+        _shadowColor =
+            Colors.blue.withOpacity(0.5); // เปลี่ยนสีของเงาหลังจาก 5 วินาที
+      });
       // }
     });
   }
@@ -79,8 +82,8 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> initializePlayer() async {
     try {
       _videoPlayerController = VlcPlayerController.network(
-        'http://192.168.10.126:8002/stream',
-        hwAcc: HwAcc.full,
+        'http://192.168.10.126:8001/stream',
+        hwAcc: HwAcc.disabled,
         autoPlay: true,
         options: VlcPlayerOptions(),
       );
@@ -90,15 +93,29 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  Future<void> initializePlayer2() async {
+    try {
+      _videoPlayerController2 = VlcPlayerController.network(
+        'http://192.168.10.126:8002/stream',
+        hwAcc: HwAcc.disabled,
+        autoPlay: true,
+        options: VlcPlayerOptions(),
+      );
+      await _videoPlayerController2.initialize();
+    } catch (e) {
+      print("Error initializing video player2: $e");
+    }
+  }
+
   // // Callback สำหรับอัปเดต payload
   // void _updatePayload(String payload) {
   //   setState(() {
   //     _payload = payload; // อัปเดต payload และ rebuild UI
   //   });
   // }
-    void _updatePayload(String payload) {
+  void _updatePayload(String payload) {
     setState(() {
-       _startTimer(); 
+      _startTimer();
       _payload = payload; // อัปเดต payload และ rebuild UI
       _shadowColor = _payload == '1'
           ? Colors.green.withOpacity(0.5) // สีเขียวหาก _payload == 1
@@ -113,6 +130,8 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
     await _videoPlayerController.stopRendererScanning();
     await _videoPlayerController.dispose();
+    await _videoPlayerController2.stopRendererScanning();
+    await _videoPlayerController2.dispose();
   }
 
   @override
@@ -135,13 +154,43 @@ class _MyHomePageState extends State<MyHomePage> {
             //   width: 200,
             //   height: 200,
             // ),
-            _videoPlayerController != null
-                ? VlcPlayer(
-                    controller: _videoPlayerController,
-                    aspectRatio: 16 / 9,
-                    placeholder: Center(child: CircularProgressIndicator()),
-                  )
-                : CircularProgressIndicator(),
+            Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                // crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                   Column(
+                      // crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    _videoPlayerController != null
+                        ? SizedBox(
+                            width: 450,
+                            height: 250,
+                            child: VlcPlayer(
+                              controller: _videoPlayerController,
+                              aspectRatio: 16 / 9,
+                              // _videoPlayerController
+                              // .value.aspectRatio, //4/3, //16 / 9,
+                              placeholder:
+                                  Center(child: CircularProgressIndicator()),
+                            ),
+                          )
+                        : CircularProgressIndicator(),
+                    _videoPlayerController2 != null
+                        ? SizedBox(
+                            width: 450,
+                            height: 250,
+                            child: VlcPlayer(
+                              controller: _videoPlayerController2,
+                              aspectRatio: 16 / 9,
+                              // _videoPlayerController
+                              // .value.aspectRatio, //4/3, //16 / 9,
+                              placeholder:
+                                  Center(child: CircularProgressIndicator()),
+                            ),
+                          )
+                        : CircularProgressIndicator(),
+                  ]),
+                ]),
             // const Text(
             //   'Match',
             //    style: Theme.of(context).textTheme.headlineMedium,
@@ -150,7 +199,7 @@ class _MyHomePageState extends State<MyHomePage> {
             // _payload,
             //   style: Theme.of(context).textTheme.headlineMedium,
             // ),
-            Container(
+            SizedBox(
               height: 10,
             ),
 
