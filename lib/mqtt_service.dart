@@ -1,13 +1,14 @@
-import 'package:mqtt_client/mqtt_client.dart';
 
+import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 
 class MQTTService {
   final client = MqttServerClient('rd.ns.co.th', 'flutter_client');
   Function(String)? onMessageReceived; // Callback สำหรับส่ง payload ไปยัง UI
+
   Future<void> connectMQTT() async {
     client.logging(on: true);
-    client.port = 1882; // Default MQTT port
+    client.port = 1882; // Default MQTT
     client.onConnected = onConnected;
     client.onDisconnected = onDisconnected;
     client.onSubscribed = onSubscribed;
@@ -20,7 +21,7 @@ class MQTTService {
         .startClean();
 
     client.connectionMessage = connMessage;
-    
+
     try {
       await client.connect();
     } catch (e) {
@@ -32,22 +33,26 @@ class MQTTService {
     if (client.connectionStatus != null &&
         client.connectionStatus!.state == MqttConnectionState.connected) {
       print('MQTT client connected');
-      const topic = 'test/topic';
+      const topic = 'ai/0001/med';
       client.subscribe(topic, MqttQos.atMostOnce);
     } else {
       print('Failed to connect to MQTT broker');
     }
 
+    // ตั้งค่าฟังก์ชั่นในการรับข้อมูลจาก MQTT
     client.updates!.listen((List<MqttReceivedMessage<MqttMessage>> c) {
       final MqttPublishMessage message = c[0].payload as MqttPublishMessage;
       final payload =
           MqttPublishPayload.bytesToStringAsString(message.payload.message);
       print('Received message: $payload from topic: ${c[0].topic}');
+
+    
+
+      // ถ้ามีการส่งค่า onMessageReceived ให้ส่งค่า match ไป
       if (onMessageReceived != null) {
         onMessageReceived!(payload);
       }
     });
-    
   }
 
   void onConnected() {
